@@ -1,4 +1,4 @@
-# Area Length Buttons — QGIS Plugin
+# Attribute Table shortcut — QGIS Plugin
 
 Adds two buttons to the toolbar of every QGIS **attribute table** window:
 
@@ -15,10 +15,10 @@ Measurements are **ellipsoidal** (WGS84 by default) so layers in geographic CRSs
 
 1. Copy this folder into your QGIS plugin directory:
    ```
-   %APPDATA%\QGIS\QGIS3\profiles\default\python\plugins\area_length_buttons\
+   %APPDATA%\QGIS\QGIS3\profiles\default\python\plugins\attribute_table_shortcut\
    ```
 2. Restart QGIS.
-3. `Plugins → Manage and Install Plugins…` → enable **Area Length Buttons**.
+3. `Plugins → Manage and Install Plugins…` → enable **Attribute Table shortcut**.
 
 ## Use
 

@@ -6,7 +6,7 @@ from .toolbar_buttons import inject_buttons
 
 
 def _log(msg):
-    QgsMessageLog.logMessage(str(msg), "AreaLength", Qgis.Info)
+    QgsMessageLog.logMessage(str(msg), "AttributeTableShortcut", Qgis.Info)
 
 
 def _looks_like_attr_table(widget):
@@ -51,11 +51,11 @@ class _AttrTableWatcher(QObject):
                     inject_buttons(obj, layer, self.iface)
         except Exception:
             import traceback
-            QgsMessageLog.logMessage(traceback.format_exc(), "AreaLength", Qgis.Warning)
+            QgsMessageLog.logMessage(traceback.format_exc(), "AttributeTableShortcut", Qgis.Warning)
         return False
 
 
-class AreaLengthPlugin:
+class AttributeTableShortcutPlugin:
     def __init__(self, iface):
         self.iface = iface
         self._watcher = None
@@ -75,7 +75,7 @@ class AreaLengthPlugin:
                     inject_buttons(w, layer, self.iface)
         except Exception:
             import traceback
-            QgsMessageLog.logMessage(traceback.format_exc(), "AreaLength", Qgis.Warning)
+            QgsMessageLog.logMessage(traceback.format_exc(), "AttributeTableShortcut", Qgis.Warning)
 
     def unload(self):
         if self._watcher is not None:

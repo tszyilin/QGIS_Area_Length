@@ -1,3 +1,3 @@
 def classFactory(iface):
-    from .plugin import AreaLengthPlugin
-    return AreaLengthPlugin(iface)
+    from .plugin import AttributeTableShortcutPlugin
+    return AttributeTableShortcutPlugin(iface)

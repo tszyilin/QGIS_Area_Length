@@ -1,22 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <plugins>
-  <pyqgis_plugin name="Area Length Buttons" version="0.5">
+  <pyqgis_plugin name="Attribute Table shortcut" version="1.0">
     <description>Adds Area, Length, X and Y buttons to the attribute table toolbar. Click to add a virtual field with a chosen unit (m2/km2 or m/km) and decimal precision. Buttons auto enable/disable based on layer geometry type.</description>
     <about>Adds four buttons to every attribute table toolbar. Area (polygon layers) adds a virtual area field in m2 or km2. Length (line layers) adds a virtual length field in m or km. X and Y (point layers) add virtual coordinate fields in the layer CRS. Decimal places configurable (default 3). Uses ellipsoidal measurement for area/length so geographic (lat/lon) layers also produce correct metric values.</about>
-    <version>0.5</version>
+    <version>1.0</version>
     <qgis_minimum_version>3.0</qgis_minimum_version>
-    <homepage>https://github.com/tszyilin/QGIS_Area_Length</homepage>
-    <file_name>area_length_buttons.zip</file_name>
-    <icon>area_length_buttons/icons/area.svg</icon>
+    <homepage>https://github.com/tszyilin/QGIS_Attribute_Table_Shortcut</homepage>
+    <file_name>attribute_table_shortcut.zip</file_name>
+    <icon>attribute_table_shortcut/icons/area.svg</icon>
     <author_name>Safin Lin</author_name>
-    <download_url>https://raw.githubusercontent.com/tszyilin/QGIS_Area_Length/main/area_length_buttons.zip</download_url>
+    <download_url>https://raw.githubusercontent.com/tszyilin/QGIS_Attribute_Table_Shortcut/main/attribute_table_shortcut.zip</download_url>
     <uploaded_by>tszyilin</uploaded_by>
     <create_date>2026-08-07T00:00:00</create_date>
     <update_date>2026-08-07T00:00:00</update_date>
     <experimental>True</experimental>
     <deprecated>False</deprecated>
-    <tracker>https://github.com/tszyilin/QGIS_Area_Length/issues</tracker>
-    <repository>https://github.com/tszyilin/QGIS_Area_Length</repository>
+    <tracker>https://github.com/tszyilin/QGIS_Attribute_Table_Shortcut/issues</tracker>
+    <repository>https://github.com/tszyilin/QGIS_Attribute_Table_Shortcut</repository>
     <tags>attribute table,area,length,virtual field</tags>
   </pyqgis_plugin>
 </plugins>

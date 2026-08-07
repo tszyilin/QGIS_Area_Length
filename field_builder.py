@@ -79,7 +79,7 @@ def add_virtual_field(layer, mode, unit=None, decimals=3):
         idx = layer.addExpressionField(expression, field)
     except Exception as e:
         QgsMessageLog.logMessage(
-            f"addExpressionField failed: {e}", "AreaLength", Qgis.Critical
+            f"addExpressionField failed: {e}", "AttributeTableShortcut", Qgis.Critical
         )
         return False, str(e)
 
