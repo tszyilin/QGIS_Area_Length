@@ -1,10 +1,13 @@
-from qgis.PyQt.QtWidgets import QToolBar, QMessageBox
+from qgis.PyQt.QtWidgets import QToolBar, QMessageBox, QFileDialog
 try:
     from qgis.PyQt.QtGui import QAction  # Qt6
 except ImportError:
     from qgis.PyQt.QtWidgets import QAction  # Qt5
 from qgis.PyQt.QtGui import QIcon
-from qgis.core import QgsWkbTypes, QgsMessageLog, Qgis, QgsProject
+from qgis.core import (
+    QgsWkbTypes, QgsMessageLog, Qgis, QgsProject,
+    QgsVectorFileWriter, QgsCoordinateTransformContext,
+)
 
 from .unit_dialog import UnitDialog
 from .field_builder import add_virtual_field
@@ -77,6 +80,64 @@ def _on_click(dialog, iface, mode):
                             f"Could not add virtual field:\n{result}")
 
 
+def _on_export_csv(dialog, iface):
+    layer = _resolve_layer(dialog, iface)
+    if layer is None:
+        QMessageBox.warning(dialog, "No layer",
+                            "Could not determine the layer for this attribute table.")
+        return
+
+    default_name = f"{layer.name()}.csv"
+    path, _ = QFileDialog.getSaveFileName(
+        dialog, "Export attribute table to CSV", default_name, "CSV files (*.csv)"
+    )
+    if not path:
+        return
+    if not path.lower().endswith(".csv"):
+        path += ".csv"
+
+    only_selected = False
+    if layer.selectedFeatureCount() > 0:
+        reply = QMessageBox.question(
+            dialog, "Export selection?",
+            f"{layer.selectedFeatureCount()} feature(s) are selected. "
+            "Export only the selection? (No = export all)",
+            QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel,
+            QMessageBox.Yes,
+        )
+        if reply == QMessageBox.Cancel:
+            return
+        only_selected = (reply == QMessageBox.Yes)
+
+    options = QgsVectorFileWriter.SaveVectorOptions()
+    options.driverName = "CSV"
+    options.fileEncoding = "UTF-8"
+    options.onlySelectedFeatures = only_selected
+    # Include geometry as WKT so users don't silently lose it.
+    options.layerOptions = ["GEOMETRY=AS_WKT", "SEPARATOR=COMMA"]
+
+    try:
+        result = QgsVectorFileWriter.writeAsVectorFormatV3(
+            layer, path, QgsCoordinateTransformContext(), options
+        )
+        err_code = result[0]
+        err_msg = result[1] if len(result) > 1 else ""
+    except AttributeError:
+        # Older QGIS fallback
+        err_code, err_msg = QgsVectorFileWriter.writeAsVectorFormat(
+            layer, path, "UTF-8", layer.crs(), "CSV",
+            onlySelected=only_selected,
+            layerOptions=["GEOMETRY=AS_WKT", "SEPARATOR=COMMA"],
+        )
+
+    if err_code == QgsVectorFileWriter.NoError:
+        QMessageBox.information(dialog, "Export complete",
+                                f"Exported to:\n{path}")
+    else:
+        QMessageBox.warning(dialog, "Export failed",
+                            f"Error {err_code}: {err_msg}")
+
+
 def inject_buttons(dialog, layer, iface=None):
     if getattr(dialog, _INJECTED_ATTR, False):
         return
@@ -113,6 +174,14 @@ def inject_buttons(dialog, layer, iface=None):
             lambda checked=False, d=dialog, m=mode: _on_click(d, iface, m)
         )
         toolbar.addAction(act)
+
+    toolbar.addSeparator()
+    export_action = QAction(_icon("export.svg"), "Export CSV", dialog)
+    export_action.setToolTip("Export attribute table to CSV")
+    export_action.triggered.connect(
+        lambda checked=False, d=dialog: _on_export_csv(d, iface)
+    )
+    toolbar.addAction(export_action)
 
     setattr(dialog, _INJECTED_ATTR, True)
     _log(f"Injected. area={area_enabled} length={length_enabled} point={point_enabled}")
