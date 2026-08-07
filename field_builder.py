@@ -2,22 +2,36 @@ from qgis.PyQt.QtCore import QVariant
 from qgis.core import QgsField, QgsProject, QgsMessageLog, Qgis
 
 
+# Coordinate transform expressions.
+_XY_PROJECT = {
+    "x": "x(transform($geometry, layer_property(@layer, 'crs'), @project_crs))",
+    "y": "y(transform($geometry, layer_property(@layer, 'crs'), @project_crs))",
+}
+_XY_WGS84 = {
+    "x": "x(transform($geometry, layer_property(@layer, 'crs'), 'EPSG:4326'))",
+    "y": "y(transform($geometry, layer_property(@layer, 'crs'), 'EPSG:4326'))",
+}
+
 BASE_EXPR = {
-    ("area",   "m2"):  "$area",
-    ("area",   "km2"): "$area / 1000000",
-    ("length", "m"):   "$length",
-    ("length", "km"):  "$length / 1000",
-    ("x",      None):  "$x",
-    ("y",      None):  "$y",
+    ("area",   "m2"):      "$area",
+    ("area",   "km2"):     "$area / 1000000",
+    ("length", "m"):       "$length",
+    ("length", "km"):      "$length / 1000",
+    ("x",      "project"): _XY_PROJECT["x"],
+    ("x",      "wgs84"):   _XY_WGS84["x"],
+    ("y",      "project"): _XY_PROJECT["y"],
+    ("y",      "wgs84"):   _XY_WGS84["y"],
 }
 
 NAME_PREFIX = {
-    ("area",   "m2"):  "area_m2",
-    ("area",   "km2"): "area_km2",
-    ("length", "m"):   "length_m",
-    ("length", "km"):  "length_km",
-    ("x",      None):  "x_coord",
-    ("y",      None):  "y_coord",
+    ("area",   "m2"):      "area_m2",
+    ("area",   "km2"):     "area_km2",
+    ("length", "m"):       "length_m",
+    ("length", "km"):      "length_km",
+    ("x",      "project"): "x_proj",
+    ("x",      "wgs84"):   "longitude",
+    ("y",      "project"): "y_proj",
+    ("y",      "wgs84"):   "latitude",
 }
 
 
@@ -38,16 +52,15 @@ def _ensure_ellipsoid():
 
 
 def add_virtual_field(layer, mode, unit=None, decimals=3):
-    """Add a virtual field to the layer.
+    """Add a virtual field.
 
     mode: "area" | "length" | "x" | "y"
-    unit: m2/km2 for area, m/km for length, ignored for x/y.
-    Returns (True, field_name) or (False, error_message).
+    unit: m2/km2 for area, m/km for length, project/wgs84 for x/y.
     """
     if mode in ("area", "length"):
         _ensure_ellipsoid()
 
-    key = (mode, unit if mode in ("area", "length") else None)
+    key = (mode, unit)
     base_expr = BASE_EXPR.get(key)
     if base_expr is None:
         return False, f"Unknown mode/unit: {mode}/{unit}"

@@ -5,21 +5,24 @@ from qgis.PyQt.QtWidgets import (
 
 
 class UnitDialog(QDialog):
-    """Dialog: pick unit (for area/length) + decimal precision."""
+    """Dialog: pick unit (area/length) or CRS (x/y) + decimal precision."""
 
     UNITS = {
         "area":   [("Square meters (m²)", "m2"),
                    ("Square kilometers (km²)", "km2")],
         "length": [("Meters (m)", "m"),
                    ("Kilometers (km)", "km")],
-        # x and y: no unit choice (layer CRS)
+        "x":      [("Project CRS", "project"),
+                   ("Latitude / Longitude (WGS84)", "wgs84")],
+        "y":      [("Project CRS", "project"),
+                   ("Latitude / Longitude (WGS84)", "wgs84")],
     }
 
     TITLES = {
         "area":   "Choose area unit:",
         "length": "Choose length unit:",
-        "x":      "Add X coordinate (layer CRS)",
-        "y":      "Add Y coordinate (layer CRS)",
+        "x":      "Choose coordinate system for X:",
+        "y":      "Choose coordinate system for Y:",
     }
 
     DEFAULT_DECIMALS = 3
@@ -75,7 +78,6 @@ class UnitDialog(QDialog):
         self.accept()
 
     def selected_unit(self):
-        # None for x/y modes.
         return self._selected
 
     def decimals(self):
