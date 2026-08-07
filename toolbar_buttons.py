@@ -63,7 +63,8 @@ def _on_click(dialog, iface, mode):
     unit = dlg.selected_unit()
     if not unit:
         return
-    ok, result = add_virtual_field(layer, mode, unit)
+    decimals = dlg.decimals()
+    ok, result = add_virtual_field(layer, mode, unit, decimals=decimals)
     if ok:
         QMessageBox.information(
             dialog, "Field added",

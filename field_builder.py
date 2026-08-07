@@ -34,23 +34,30 @@ def _ensure_ellipsoid():
         proj.setEllipsoid("WGS84")
 
 
-def add_virtual_field(layer, mode, unit):
-    """Add a virtual field to the layer computing area or length in the chosen unit.
+def add_virtual_field(layer, mode, unit, decimals=3):
+    """Add a virtual field computing area or length in the chosen unit, rounded to `decimals`.
 
     Returns (True, field_name) on success, (False, error_message) on failure.
     """
     _ensure_ellipsoid()
 
     if mode == "area":
-        expression = AREA_EXPR.get(unit)
+        base_expr = AREA_EXPR.get(unit)
     elif mode == "length":
-        expression = LENGTH_EXPR.get(unit)
+        base_expr = LENGTH_EXPR.get(unit)
     else:
         return False, f"Unknown mode: {mode}"
 
-    if expression is None:
+    if base_expr is None:
         return False, f"Unknown unit: {unit}"
 
+    try:
+        decimals = int(decimals)
+    except (TypeError, ValueError):
+        decimals = 3
+    decimals = max(0, min(decimals, 15))
+
+    expression = f"round({base_expr}, {decimals})"
     name = _unique_name(layer, NAME_PREFIX[unit])
     field = QgsField(name, QVariant.Double)
 
