@@ -26,7 +26,6 @@ def _icon(name):
 
 
 def _resolve_layer(dialog, iface):
-    """Best-effort fresh layer lookup at click time."""
     title = (dialog.windowTitle() or "")
     name = title
     for sep in (" — ", " – ", " - "):
@@ -41,40 +40,41 @@ def _resolve_layer(dialog, iface):
     return iface.activeLayer() if iface is not None else None
 
 
+_REQUIRED_GEOM = {
+    "area":   (QgsWkbTypes.PolygonGeometry, "polygon"),
+    "length": (QgsWkbTypes.LineGeometry, "line"),
+    "x":      (QgsWkbTypes.PointGeometry, "point"),
+    "y":      (QgsWkbTypes.PointGeometry, "point"),
+}
+
+
 def _on_click(dialog, iface, mode):
     layer = _resolve_layer(dialog, iface)
     if layer is None or not hasattr(layer, "geometryType"):
         QMessageBox.warning(dialog, "No layer",
                             "Could not determine the layer for this attribute table.")
         return
-    gtype = layer.geometryType()
-    if mode == "area" and gtype != QgsWkbTypes.PolygonGeometry:
+    required, label = _REQUIRED_GEOM[mode]
+    if layer.geometryType() != required:
         QMessageBox.warning(dialog, "Wrong geometry",
-                            f"Area requires a polygon layer. '{layer.name()}' is not a polygon.")
-        return
-    if mode == "length" and gtype != QgsWkbTypes.LineGeometry:
-        QMessageBox.warning(dialog, "Wrong geometry",
-                            f"Length requires a line layer. '{layer.name()}' is not a line layer.")
+                            f"'{mode.upper()}' requires a {label} layer. "
+                            f"'{layer.name()}' is not a {label} layer.")
         return
 
     dlg = UnitDialog(mode, parent=dialog)
     if dlg.exec_() != dlg.Accepted:
         return
-    unit = dlg.selected_unit()
-    if not unit:
-        return
+    unit = dlg.selected_unit()  # may be None for x/y
     decimals = dlg.decimals()
-    ok, result = add_virtual_field(layer, mode, unit, decimals=decimals)
+    ok, result = add_virtual_field(layer, mode, unit=unit, decimals=decimals)
     if ok:
         QMessageBox.information(
             dialog, "Field added",
             f"Virtual field '{result}' added to layer '{layer.name()}'."
         )
     else:
-        QMessageBox.warning(
-            dialog, "Failed",
-            f"Could not add virtual field:\n{result}"
-        )
+        QMessageBox.warning(dialog, "Failed",
+                            f"Could not add virtual field:\n{result}")
 
 
 def inject_buttons(dialog, layer, iface=None):
@@ -88,30 +88,31 @@ def inject_buttons(dialog, layer, iface=None):
         return
     toolbar = next((tb for tb in toolbars if tb.isVisible()), toolbars[0])
 
-    # Fail-safe enable logic:
-    #  - If we know the geometry type, gray the button that doesn't apply.
-    #  - If we DON'T know it (layer=None), leave both enabled and validate at click time.
     if layer is not None and hasattr(layer, "geometryType"):
         gtype = layer.geometryType()
-        area_enabled = gtype == QgsWkbTypes.PolygonGeometry
+        area_enabled   = gtype == QgsWkbTypes.PolygonGeometry
         length_enabled = gtype == QgsWkbTypes.LineGeometry
+        point_enabled  = gtype == QgsWkbTypes.PointGeometry
     else:
-        area_enabled = True
-        length_enabled = True
+        area_enabled = length_enabled = point_enabled = True
 
     toolbar.addSeparator()
 
-    area_action = QAction(_icon("area.svg"), "Area", dialog)
-    area_action.setToolTip("Add virtual area field (polygon layers)")
-    area_action.setEnabled(area_enabled)
-    area_action.triggered.connect(lambda checked=False, d=dialog: _on_click(d, iface, "area"))
-    toolbar.addAction(area_action)
+    specs = [
+        ("area",   "Area",   "area.svg",   "Add virtual area field (polygon layers)",   area_enabled),
+        ("length", "Length", "length.svg", "Add virtual length field (line layers)",    length_enabled),
+        ("x",      "X",      "x.svg",      "Add virtual X-coordinate field (point layers)", point_enabled),
+        ("y",      "Y",      "y.svg",      "Add virtual Y-coordinate field (point layers)", point_enabled),
+    ]
 
-    length_action = QAction(_icon("length.svg"), "Length", dialog)
-    length_action.setToolTip("Add virtual length field (line layers)")
-    length_action.setEnabled(length_enabled)
-    length_action.triggered.connect(lambda checked=False, d=dialog: _on_click(d, iface, "length"))
-    toolbar.addAction(length_action)
+    for mode, label, icon_name, tooltip, enabled in specs:
+        act = QAction(_icon(icon_name), label, dialog)
+        act.setToolTip(tooltip)
+        act.setEnabled(enabled)
+        act.triggered.connect(
+            lambda checked=False, d=dialog, m=mode: _on_click(d, iface, m)
+        )
+        toolbar.addAction(act)
 
     setattr(dialog, _INJECTED_ATTR, True)
-    _log(f"Injected. area_enabled={area_enabled} length_enabled={length_enabled}")
+    _log(f"Injected. area={area_enabled} length={length_enabled} point={point_enabled}")

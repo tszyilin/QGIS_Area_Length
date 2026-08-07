@@ -2,19 +2,22 @@ from qgis.PyQt.QtCore import QVariant
 from qgis.core import QgsField, QgsProject, QgsMessageLog, Qgis
 
 
-AREA_EXPR = {
-    "m2":  "$area",
-    "km2": "$area / 1000000",
+BASE_EXPR = {
+    ("area",   "m2"):  "$area",
+    ("area",   "km2"): "$area / 1000000",
+    ("length", "m"):   "$length",
+    ("length", "km"):  "$length / 1000",
+    ("x",      None):  "$x",
+    ("y",      None):  "$y",
 }
-LENGTH_EXPR = {
-    "m":  "$length",
-    "km": "$length / 1000",
-}
+
 NAME_PREFIX = {
-    "m2":  "area_m2",
-    "km2": "area_km2",
-    "m":   "length_m",
-    "km":  "length_km",
+    ("area",   "m2"):  "area_m2",
+    ("area",   "km2"): "area_km2",
+    ("length", "m"):   "length_m",
+    ("length", "km"):  "length_km",
+    ("x",      None):  "x_coord",
+    ("y",      None):  "y_coord",
 }
 
 
@@ -34,22 +37,20 @@ def _ensure_ellipsoid():
         proj.setEllipsoid("WGS84")
 
 
-def add_virtual_field(layer, mode, unit, decimals=3):
-    """Add a virtual field computing area or length in the chosen unit, rounded to `decimals`.
+def add_virtual_field(layer, mode, unit=None, decimals=3):
+    """Add a virtual field to the layer.
 
-    Returns (True, field_name) on success, (False, error_message) on failure.
+    mode: "area" | "length" | "x" | "y"
+    unit: m2/km2 for area, m/km for length, ignored for x/y.
+    Returns (True, field_name) or (False, error_message).
     """
-    _ensure_ellipsoid()
+    if mode in ("area", "length"):
+        _ensure_ellipsoid()
 
-    if mode == "area":
-        base_expr = AREA_EXPR.get(unit)
-    elif mode == "length":
-        base_expr = LENGTH_EXPR.get(unit)
-    else:
-        return False, f"Unknown mode: {mode}"
-
+    key = (mode, unit if mode in ("area", "length") else None)
+    base_expr = BASE_EXPR.get(key)
     if base_expr is None:
-        return False, f"Unknown unit: {unit}"
+        return False, f"Unknown mode/unit: {mode}/{unit}"
 
     try:
         decimals = int(decimals)
@@ -58,7 +59,7 @@ def add_virtual_field(layer, mode, unit, decimals=3):
     decimals = max(0, min(decimals, 15))
 
     expression = f"round({base_expr}, {decimals})"
-    name = _unique_name(layer, NAME_PREFIX[unit])
+    name = _unique_name(layer, NAME_PREFIX[key])
     field = QgsField(name, QVariant.Double)
 
     try:

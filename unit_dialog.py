@@ -5,42 +5,52 @@ from qgis.PyQt.QtWidgets import (
 
 
 class UnitDialog(QDialog):
-    """Dialog: pick unit + decimal precision for the virtual field."""
+    """Dialog: pick unit (for area/length) + decimal precision."""
 
-    AREA_UNITS = [("Square meters (m²)", "m2"),
-                  ("Square kilometers (km²)", "km2")]
-    LENGTH_UNITS = [("Meters (m)", "m"),
-                    ("Kilometers (km)", "km")]
+    UNITS = {
+        "area":   [("Square meters (m²)", "m2"),
+                   ("Square kilometers (km²)", "km2")],
+        "length": [("Meters (m)", "m"),
+                   ("Kilometers (km)", "km")],
+        # x and y: no unit choice (layer CRS)
+    }
+
+    TITLES = {
+        "area":   "Choose area unit:",
+        "length": "Choose length unit:",
+        "x":      "Add X coordinate (layer CRS)",
+        "y":      "Add Y coordinate (layer CRS)",
+    }
 
     DEFAULT_DECIMALS = 3
 
     def __init__(self, mode, parent=None):
         super().__init__(parent)
-        self.mode = mode  # "area" or "length"
+        self.mode = mode
         self._selected = None
         self._decimals = self.DEFAULT_DECIMALS
 
-        self.setWindowTitle("Select unit")
+        self.setWindowTitle("Add virtual field")
         layout = QVBoxLayout(self)
 
-        label_text = "Choose area unit:" if mode == "area" else "Choose length unit:"
-        layout.addWidget(QLabel(label_text))
+        layout.addWidget(QLabel(self.TITLES.get(mode, mode)))
 
-        self._group = QButtonGroup(self)
-        units = self.AREA_UNITS if mode == "area" else self.LENGTH_UNITS
         self._buttons = []
-        for i, (label, key) in enumerate(units):
-            rb = QRadioButton(label)
-            if i == 0:
-                rb.setChecked(True)
-            self._group.addButton(rb, i)
-            layout.addWidget(rb)
-            self._buttons.append((rb, key))
+        units = self.UNITS.get(mode)
+        if units:
+            self._group = QButtonGroup(self)
+            for i, (label, key) in enumerate(units):
+                rb = QRadioButton(label)
+                if i == 0:
+                    rb.setChecked(True)
+                self._group.addButton(rb, i)
+                layout.addWidget(rb)
+                self._buttons.append((rb, key))
 
-        divider = QFrame()
-        divider.setFrameShape(QFrame.HLine)
-        divider.setFrameShadow(QFrame.Sunken)
-        layout.addWidget(divider)
+            divider = QFrame()
+            divider.setFrameShape(QFrame.HLine)
+            divider.setFrameShadow(QFrame.Sunken)
+            layout.addWidget(divider)
 
         dec_row = QHBoxLayout()
         dec_row.addWidget(QLabel("Decimal places:"))
@@ -65,6 +75,7 @@ class UnitDialog(QDialog):
         self.accept()
 
     def selected_unit(self):
+        # None for x/y modes.
         return self._selected
 
     def decimals(self):
