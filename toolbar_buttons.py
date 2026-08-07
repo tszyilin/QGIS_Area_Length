@@ -13,11 +13,11 @@ from .unit_dialog import UnitDialog
 from .field_builder import add_virtual_field
 
 
-_INJECTED_ATTR = "_attribute_table_shortcut_injected"
+_INJECTED_ATTR = "_attribute_table_functions_injected"
 
 
 def _log(msg):
-    QgsMessageLog.logMessage(str(msg), "AttributeTableShortcut", Qgis.Info)
+    QgsMessageLog.logMessage(str(msg), "AttributeTableFunctions", Qgis.Info)
 
 
 def _icon(name):
